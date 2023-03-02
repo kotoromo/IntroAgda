@@ -1,0 +1,342 @@
+
+# Una introducción a una introducción de Agda
+### García Fierros Nicky
+
+## Introducción
+
+Agda es tanto un lenguaje de programación (funcional) como un asistente de
+pruebas (Vease [PROOF = PROGRAM - Samuel Mimram](https://www.lix.polytechnique.fr/Labo/Samuel.Mimram/teaching/INF551/course.pdf). De acuerdo con la [documentación
+oficial de Agda](https://agda.readthedocs.io/en/v2.6.3/getting-started/what-is-agda.html), Agda es una extensión de la teoría de tipos de Martin-Löf, por lo que
+su poder expresivo es adecuado para escribir pruebas y especificaciones de
+objetos matemáticos. De esta forma, Agda también es una herramienta para la
+formalización de las matemáticas. En tanto que para poder aprovechar todo el
+poder de Agda como asistente de pruebas y herramienta de formalización de
+matemáticas se requiere estudiar la teoría de tipos antes mencionada, en esta
+breve pero concisa introducción no se tocarán los detalle; sin embargo
+considero importante mencionar que, yo como autor, el acercamiento que he
+tenido con la teoría de tipos de Martin-Löf y Agda ha sido gracias a la
+teoría homotópica de tipos, de modo que mi forma de pensar sobre lo que se
+presentará en este trabajo no podría empatar directamente con la teoría sobre
+la cual se fundamenta Agda.
+
+Hay mucho que decir sobre la relación entre la lógica, las categorías y los
+tipos; sin emargo me limitaré a mencionar la correspondencia
+Curry-Howard-Lambek por muy encima, y una breve mención de tipos dependientes y
+su interpretación tanto lógica como categórica.
+
+### Correspondencia Curry-Howard-Lambek
+
+En **[The Formulae-As-Types Notion of Construction](https://www.cs.cmu.edu/~crary/819-f09/Howard80.pdf)**, un artículo escrito por el lógico Alvin Howard en
+1980 menicona que Curry sugirió una relación entre los combinadores del
+cálculo lambda y axiomas de la lógica. En este mismo escrito, Howard formaliza
+las observaciones hechas por Curry. Por otro lado, a inicios de los 70's el
+matemático Joachim Lambek demuestra que las categorías cartesianas cerradas y
+la lógica combinatoria tipada comparten una teoría ecuacional en común.
+
+La correspondencia es entonces
+
+|     Tipos      |     Lógica     |      Categorías     |
+| -------------  | -------------- | ------------------- |
+|      𝟙         |       ⊤        |  Objeto terminal    |
+|      𝟘         |       ⊥        |  Objeto inicial     |
+|      →         |       ⊃        |  Flecha             |
+|      ×         |       ∧        |  Producto           |
+|      +         |       ∨        |  Coproducto         |
+
+Es importante señalar que, a diferencia de la teoría de conjuntos, los tipos
+producto y función son conceptos primitivos.
+
+La forma de construir términos de un tipo producto coincide con aquella de la
+teoría de categorías. Dados $a : A$ y $b : B$ podemos construir $(a , b) : A × B$.
+Hablaremos un poco más sobre cómo "acceder" a los elementos que componen un tipo
+producto cuando entremos bien en materia sobre usar a Agda como un asistente de
+prueba.
+
+Por otro lado, la forma de construir un tipo flecha es mediante un proceso de
+**abstracción**. Si tenemos un término, y observamos que podemos abstraer cierto
+comportamiento de interés, entonces podemos introducir un tipo flecha que
+abstrae el comportamiento deseado, de forma análoga a como solemos hacerlo en
+matemáticas. Si, por ejemplo, observamos que la sucesión 0, 1, 2, 4, 16, 32, ...
+presenta un comportamiento cuadrático, podemos abstraer este comportamiento
+escribiendo una representación simbólica de este en términos de nuestro lenguaje
+matemático:
+$$
+f(x) = x^2
+$$
+
+Para restringir más dicho comportamiento en función de la clase de términos que
+queremos considerar en nuestra abstracción, introducimos dominios y codominios.
+
+$$
+f : ℕ → ℕ
+$$
+
+de modo que sólo permitimos que $f$ "funcione" con naturales, y garantizamos que
+tras hacer cualquier cómputo con $f$, el número que nos devuelve es un número
+natural.
+
+De forma análoga, el proceso de abstracción involucrado en la introducción
+de un tipo flecha involucra un término `t : B`, del cual abstraemos `x : A`
+y garantizamos que tras cualquier cómputo realizado con este tipo flecha
+obtenemos otro término de tipo `B`. Expresamos esto con la siguiente
+sintaxis:
+
+```haskell
+λx . t : A → B
+```
+
+### Π-types, Σ-types, lógica y categorías.
+
+La teoría de tipos de Martin-Löf permite trabajar con tipos que dependen de
+otros; es de esta forma que son **tipos dependientes**. Se introducen los tipos
+de funciones dependientes, y los tipos coproducto.
+
+#### Π-types
+
+El HoTT Book menciona que los elementos (términos) de un tipo Π son funciones
+cuyo tipo codominio puede variar según el elemento del dominio hacia el cual
+se aplica la función. En virtud de este comportamiento familiar para aquellas
+personas que han estudiado teoría de conjuntos es que reciben el nombre de Π,
+pues el producto cartesiano generalizado tiene este mismo comportamiento.
+
+Dado un conjunto $A$, y una familia $B$ indizada por $A$, el producto cartesiano generalizado es
+$$
+Π\limits_{a ∈ A} B(a) = \{ f: A → \bigcup\limits_{a ∈ A}B(a)\ \vert\ ∀a ∈ A . f(a) ∈ B(a) \}
+$$
+
+En teoría de tipos escribimos `:` en lugar de `∈`, pero la sintaxis es prácticamente la misma.
+Dado un tipo `A`, y una familia `B:A → Type`, podemos construir el tipo de funciones
+dependientes
+
+```haskell
+Π(a:A) B(a) : Type
+```
+
+Intuitivamente, y en efecto así ocurre, si `B` es una familia constante, entonces
+
+```haskell
+Π(a:A) B(a) ≡ (A → B)
+```
+
+De esta forma, el tipo Π generaliza a los tipos flecha. Estos tipos además permiten el
+polimorfismo de funciones. Una función polimorfa es aquella que toma un tipo como
+argumento y actúa sobre los elementos de dicho tipo. Esto debería recordarle a usted
+del ∀ en la lógica. Una observación pertinente es que los tipos producto se pueden
+pensar como una versión "no dependiente" en cierto sentido de los tipos Π.
+
+#### Σ-types
+
+Así como los tipos Π generalizan a los tipos flecha, los tipos Σ generalizan a los
+tipos producto, en tanto que permiten que el elemento en la "segunda coordenada"
+dependa del elemento en la "primera coordenada". Obsevese que este comportamiento
+es el mismo que permite el coproducto de la categoría de conjuntos (la unión disjunta).
+
+```haskell
+Σ(x:A) B(x)
+```
+
+Intuitivamente, y de nuevo es cierto que, si $B$ es constante, entonces
+$$
+\right( \sum\limits_{x : A} B \left) ≡ (A × B)
+$$
+
+Así como el tipo Π se puede identificar con el ∀ en lógica, el tipo Σ se puede
+identificar con el cuantificador ∃. Una observación adicional pertinente
+respecto a los tipos Σ es que los tipos + son una versión "no dependiente" en
+cierto sentido de los tipos Σ.
+
+### En resumen
+
+Resumiendo algunos comentarios relevantes a esta pequeña introducción a la
+teoría de tipos de Martin-Löf, tenemos la siguiente tabla.
+
+| Tipos | Lógica | Categorías |
+| ----- | ------ | ---------- |
+| Σ     | ∃      | coproducto |
+| Π     | ∀      | producto   |
+
+## Probando tautologías de la lógica proposicional con Agda
+
+El poder expresivo de la teoría de tipos de Martin-Löf (y por extensión la teoría
+homotópica de tipos) permite identificar proposiciones matemáticas con tipos, y sus
+demostraciones con términos de un tipo dado. De esta forma, si ocurre que el tipo
+tiene por lo menos un término, entonces podemos permitir decir que tenemos una
+demostración de dicha proposición.
+En HoTT las proposiciones (de la lógica proposicional) corresponden a una clase
+particular de tipos, en tanto que [en la lógica de primer orden no hay forma de distinguir entre una prueba de otra](https://homotopytypetheory.org/book/).
+Estas tecnicalidades se mencionan con el propósito de incitar a la persona leyendo
+o escuchando esto a investigar más por su cuenta, pues
+para propósitos de esta exposición haremos uso del tipo `Set` de Agda, que renombraremos
+a `Type` para hacer énfasis en este paradigma de "Proposiciones como tipos".
+
+Iniciamos escribiendo al inicio de todo nuestro archivo con extensión `.agda` o `.lagda.md`
+las siguientes cláusulas:
+
+```agda
+
+open import Data.Product renaming (_×_ to _∧_)
+
+Type = Set
+
+```
+
+En la primera línea le pedimos a Agda por favor y con mucho cariño que de la
+biblioteca estándar importe el tipo Product y que además renombre el operador `×`
+a `∧`. En la segunda línea renombramos al tipo `Set` como `Type`.
+
+Para pedirle a Agda, de nuevo por favor y con mucho cariño, que nos diga si
+lo que hemos escrito hasta el momento está bien escrito y bien tipado
+presionamos la combinación `C-c C-l` en emacs o en vscode con la extensión `agda-mode`.
+Si todo está bien, deberíamos ver colorcitos en el código Agda que escribimos y
+ningún mensaje al fondo de emacs o de vscode.
+
+Ya con nuestro preámbulo listo, empecemos a demostrar pero no sin antes dar el crédito
+correspondiente. La gran mayoría de cosas que se expondrán a continuación fueron tomadas
+de las siguientes fuentes:
+
+  * [Propositional Logic in Agda - Samuel Mimram](https://www.lix.polytechnique.fr/Labo/Samuel.Mimram/teaching/INF551/TD/5.propositional.html)
+  * [The HoTT Game](https://homotopytypetheory.org/2021/12/01/the-hott-game/)
+  * [Agda in a hurry - Martin Escardó](https://www.cs.bham.ac.uk/~mhe/fp-learning-2017-2018/html/Agda-in-a-Hurry.html)
+  * [HoTTEST School Agda Notes - Martin Escardó](https://martinescardo.github.io/HoTTEST-Summer-School/)
+  * [HoTT UF in Agda - Martin Escardó](https://www.cs.bham.ac.uk/~mhe/HoTT-UF-in-Agda-Lecture-Notes/HoTT-UF-Agda.html#contents)
+  *[Proof = Program - Samuel Mimram](https://www.lix.polytechnique.fr/Labo/Samuel.Mimram/teaching/INF551/course.pdf)
+
+### Proposición
+Sean $A, B$ proposiciones. Entonces $A ∧ B ⇔ B ∧ A$.
+
+#### Demostración
+
+Recordando que bajo nuestro paradigma en uso las proposiciones son tipos,
+codificamos nuestra proposición como un tipo y, para demostrar la proposición
+buscamos definir un término bien tipado del tipo de nuestra proposición.
+
+```haskell
+∧-comm : {A B : Type} → A ∧ B → B ∧ A
+∧-comm = ？ 
+
+```
+
+Como no sabemos ni pío de Agda, le preguntamos a Agda qué opina que debería
+ser la definición de nuestro término que, a final de cuentas será nuestra
+prueba. Esto lo hacemos escribiendo el signo de interrogación despues de el signo
+de igualdad. Si le pedimos a Agda que verifique si nuestro programa está bien tipado,
+apareceran mensajes en la parte de abajo de emacs/vscode y los símbolos `{ }0` en
+donde habíamos puesto nuestro preciado símbolo de interrogación. Estos símbolos
+significan que ahí hay un **hueco de meta**.
+Los mensajes leen
+
+```haskell
+?0 : A ∧ B → B ∧ A
+```
+
+Lo que denotan los símbolos `?0` es que nuestra meta `0` es la de producir un término
+del tipo `A ∧ B → B ∧ A`. Podemos pedirle a Agda que nos de más información sobre nuestro
+problema (Contexto y Meta) al posicionar el cursor en el hueco de meta
+mediante la combinación de teclas `C-c C-,` en emacs.
+
+Veremos que ahora nos muestra mensajes muy distintos a los anteriores.
+Nos dice que en nuestra declaración del término que necesitamos debemos asumir que
+`B` y `A` son tipos. Quizás para esta situación no es muy reveladora la información
+que brinda Agda, pero en otras situaciones brinda información bastante útil.
+
+Podemos pedirle a Agda que nos de más pistas, con base en la naturaleza de los
+términos de los tipos que queremos producir. Para esto, de nuevo con el cursor en el hueco
+de meta, presionamos la combinación de teclas `C-c C-r` en emacs/vscode para "refinar la meta".
+
+```haskell
+
+∧-comm : {A B : Type} → A ∧ B → B ∧ A
+∧-comm = λ x → { }1
+
+```
+
+Al hacer esto, notamos que agda modifica el hueco y las metas se modifican acordemente.
+Ahora nuestra meta es producir un término de tipo `B ∧ A`. Si volvemos a pedirle a Agda
+el contexto y meta del problema, veremos que ahora tenemos a nuestra disposición
+un término `x : A ∧ B`, con el cual podemos producir un término de tipo `B ∧ A`.
+Si de nuevo le pedimos a Agda que refine la meta, tendremos ahora dos metas nuevas:
+producir un término de tipo `B` y otro término de tipo `A`.
+
+```haskell
+
+∧-comm : {A B : Type} → A ∧ B → B ∧ A
+∧-comm = λ x → { }1 , { }2
+
+```
+
+```haskell
+
+∧-comm : {A B : Type} → A ∧ B → B ∧ A
+∧-comm = λ x → {aa}0, {aa}1 
+
+```
+
+De aquí, podemos proceder de al menos tres formas distintas.
+  * Podemos recordar que en la teoría de tipos de Martin-Löf (MLTT) el tipo producto
+  es una noción primitiva, y por lo tanto Agda debe de implementar de forma "nativa"
+  un eliminador izquierdo y derecho para el tipo producto.
+
+  * Podemos probar un lema (redundante bajo la observación anterior)
+  * Podemos aprovechar las bondades de Agda y su pattern matching para poder construir el término
+  que queremos en virtud de la sintaxis que tienen los términos del tipo producto.
+
+En tanto que para lo primero habría que irse a la documentación de Agda, y podríamos
+usar lo tercero para probar el lema de la segunda opción, mejor probamos juntos el lema
+y las otras opciones se quedan como ejercicio.
+
+En MLTT, los términos del tipo producto se forman según el siguiente juicio:
+
+```haskell
+
+Γ ⊢ a : A      Γ ⊢ b : B
+--------------------------[×-intro]
+Γ ⊢ (a , b) : A × B
+
+```
+
+De esta forma, aprovechando el pattern matching de Agda podemos escribir la siguiente demostración
+para el lema
+
+### Lema
+
+Sean $A$, $B$ proposiciones. Entonces $A ∧ B ⊃ A$ y $A ∧ B ⊃ B$.
+
+
+#### Demostración
+
+```agda
+∧-el : {A B : Type} → A ∧ B → A
+∧-el (a , b) = a
+
+∧-er : {A B : Type} → A ∧ B → B
+∧-er (a , b) = b
+
+```
+Una observación pertinete es que al refinar y obtener los dos huecos anteriormente,
+Agda nos está diciendo que utilicemos la regla de introducción del tipo producto, tal y como
+lo hicimos al probar nuestro lema, para generar el término que deseamos. Entonces el proceso de
+refinamiento de meta corresponde a aplicar una regla de introducción.
+
+Ya armados con nuestro lema, podemos demostrar lo que queríamos en un inicio.
+Para "darle" a Agda los términos tenemos dos opciones, que realmente son la misma:
+  * Escribir sobre el hueco el término y luego presionar `C-c C-SPC` ó,
+  * Presionar sobre el hueco `C-c C-SPC`.
+
+Antes de rellenar ambos huecos, prueba usando la combinación `C-c C-n`
+en alguno de los huecos, y escribiendo `∧-er x` o `∧-el x`. Encontrarás que Agda
+**evalúa** el término que escribiste. Al escribir `∧-er x` regresa `proj₂ x` el cual
+es el resultado de aplicar el eliminador "nativo" del tipo producto sobre el término `x`.
+Tras darle a Agda los términos necesarios, terminamos nuestra prueba. 
+
+```agda
+
+∧-comm : {A B : Type} → A ∧ B → B ∧ A
+∧-comm = λ x → (∧-er x) , (∧-el x) 
+
+```
+
+En conclusión, el termino `∧-comm = λ x → (∧-er x) , (∧-el x)` es prueba/testigo de que
+el tipo `∧-comm : {A B : Type} → A ∧ B → B ∧ A` no es vacío y por lo tanto es una proposición
+"verdadera".
+
+

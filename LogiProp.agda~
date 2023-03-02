@@ -1,0 +1,6 @@
+
+--{ Esto es sólo notación mía. }-
+--{ En Agda, Set es un tipo truncado Type_1 }--
+
+Type = Set
+
